@@ -2,34 +2,31 @@ from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import Usuario, Base  # Certifique-se de que o modelo está correto
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+from models import db, Usuario, Produtos  # Importa a instância db e os modelos
 
-
+# Inicializa a aplicação Flask
 app = Flask(__name__)
+
+# Configurações do banco de dados
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///meubanco.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'supersecreto'
-engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'],echo=True)  # echo=True exibe as queries no console
 
-# Configura a sessão
-Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-session = Session()
+# Inicializa o SQLAlchemy
+db.init_app(app)
 
 # Configuração do Flask-Login
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Definir função para carregar usuário
+# Função para carregar o usuário
 @login_manager.user_loader
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
 
-# Iniciar o SQLAlchemy
-db = SQLAlchemy(app)
-
-Base.metadata.create_all(engine)
+# Cria as tabelas dentro do contexto da aplicação
+with app.app_context():
+    db.create_all()
 
 # Rota de registro de usuário
 @app.route('/', methods=['POST', 'GET'])
@@ -54,16 +51,20 @@ def register():
 # Rota de login
 @app.route('/login', methods=['POST', 'GET'])
 def login():
+    print('ola')
     if request.method == 'POST':
         email = request.form['email']
         senha = request.form['senha']
         
         # Consulta no banco e verificação de senha
         usuario = Usuario.query.filter_by(email=email).first()
+        print(usuario)
         if usuario and check_password_hash(usuario.senha, senha):
+            print('02')
             login_user(usuario)
             return redirect(url_for('home'))
         else:
+            print('03')
             flash('Email ou senha incorretos!', 'error')
 
     return render_template("login.html")
@@ -82,5 +83,6 @@ def logout():
     flash('Você saiu da conta!', 'info')
     return redirect(url_for('login'))
 
+# Executa a aplicação
 if __name__ == '__main__':
     app.run(debug=True)

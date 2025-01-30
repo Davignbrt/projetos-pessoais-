@@ -1,27 +1,27 @@
-from sqlalchemy import Integer, String, Float, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from sqlalchemy.orm import DeclarativeBase
 
-class Base(DeclarativeBase):
-    pass
+# Cria uma instância do SQLAlchemy
+db = SQLAlchemy()
 
-class Usuario(Base, UserMixin):
+class Usuario(db.Model, UserMixin):
     __tablename__ = 'usuario'
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    nome: Mapped[str] = mapped_column(String(60), nullable=False)
-    email: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
-    senha: Mapped[str] = mapped_column(String(100), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(60), nullable=False)
+    email = db.Column(db.String(80), unique=True, nullable=False)
+    senha = db.Column(db.String(100), nullable=False)
     
-    produtos: Mapped[list['Produtos']] = relationship('Produtos', back_populates='usuario')
+    # Relacionamento com Produtos
+    produtos = db.relationship('Produtos', back_populates='usuario')
 
-class Produtos(Base):
+class Produtos(db.Model):
     __tablename__ = 'produtos'
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    nome: Mapped[str] = mapped_column(String(100), nullable=False)
-    preco: Mapped[float] = mapped_column(Float, nullable=False)
-    usuario_id: Mapped[int] = mapped_column(ForeignKey('usuario.id'), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    preco = db.Column(db.Float, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
 
-    usuario: Mapped['Usuario'] = relationship('Usuario', back_populates='produtos')
+    # Relacionamento com Usuario
+    usuario = db.relationship('Usuario', back_populates='produtos')
